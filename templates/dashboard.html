@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sales Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fdf3f3d9;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            overflow-y: visible;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        .sidebar {
+            height: 130vh;
+            background-color: #000000;
+            color: white;
+            padding: 15px;
+            width: 200px;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+        .sidebar h2 {
+            color: #b2a88b;
+            font-weight: 100;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            font-size: 30;
+
+            display: block;
+            padding: 10px 0;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+        }
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .card-container {
+            display: flex;
+            justify-content: space-between;
+          
+            gap: 20px;
+        }
+        .card {
+            flex: 1;
+            background-color: #6b087e;
+            height:80px;
+            color: white;
+            padding: 20px;
+            margin: 0 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .card:nth-child(2) {
+            background-color: #961111;
+        }
+        .card:nth-child(3) {
+            background-color: #0a86af;
+        }
+        .card h2 {
+            margin: 0;
+            font-weight: 100;
+            font-size: 20px;
+            text-align: center;
+        }
+        .card p {
+            margin: 0;
+            font-weight: 100;
+            font-size: 18px;
+            text-align: center;
+        }
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 10px;
+        }
+        .chart-wrapper {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <h2>Sales Dashboard</h2>
+            <a href="/">Home</a>
+            
+            
+        </nav>
+        <main class="content">
+            <div class="card-container">
+                <div class="card">
+                    <p>Total Sales</p><br/>
+                    
+                    <h2>{{ total_sales }}</h2>
+                    
+                   
+                </div>
+                <div class="card">
+                    <p>Completed Sales</p><br>
+                    
+                    <h2>{{ completed_sales }}</h2>
+                    
+                </div>
+                <div class="card">
+                    <p>Pending Sales</p><br>
+                    
+                    <h2>{{ pending_sales }}</h2>
+                    
+                </div>
+            </div><br/>
+            <div class="chart-container">
+                <div class="chart-wrapper">
+                    <canvas id="lineChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="barChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="pieChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="doughnutChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var dates = JSON.parse('{{ dates|escapejs }}');
+            var amounts = JSON.parse('{{ amounts|escapejs }}');
+            var completedSalesCount = {{ completed_sales_count }};
+            var pendingSalesCount = {{ pending_sales_count }};
+
+            // Line Chart
+            var lineCtx = document.getElementById('lineChart').getContext('2d');
+            var lineChart = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Sales Amount',
+                        data: amounts,
+                        fill: false,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'MMM D'
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Bar Chart
+            var barCtx = document.getElementById('barChart').getContext('2d');
+            var barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Sales Amount',
+                        data: amounts,
+                        backgroundColor: 'rgb(75, 192, 192)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'MMM D'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Pie Chart
+            var pieCtx = document.getElementById('pieChart').getContext('2d');
+            var pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Completed Sales', 'Pending Sales'],
+                    datasets: [{
+                        data: [completedSalesCount, pendingSalesCount],
+                        backgroundColor: ['rgb(75, 192, 192)', 'rgb(255, 205, 86)']
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+
+            // Doughnut Chart
+            var doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+            var doughnutChart = new Chart(doughnutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed Sales', 'Pending Sales'],
+                    datasets: [{
+                        data: [completedSalesCount, pendingSalesCount],
+                        backgroundColor: ['rgb(75, 192, 192)', 'rgb(255, 205, 86)']
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+
+            // Scatter Chart
+            var scatterCtx = document.getElementById('scatterChart').getContext('2d');
+            var scatterChart = new Chart(scatterCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Scatter Dataset',
+                        data: [{
+                            x: 10,
+                            y: 20
+                        }, {
+                            x: 15,
+                            y: 10
+                        }],
+                        backgroundColor: 'rgb(54, 162, 235)',
+                        borderColor: 'rgb(54, 162, 235)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom'
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left'
+                        }
+                    }
+                }
+            });
+
+            // Radar Chart
+            var radarCtx = document.getElementById('radarChart').getContext('2d');
+            var radarChart = new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Sales', 'Marketing', 'Development', 'Customer Support', 'Finance'],
+                    datasets: [{
+                        label: 'Team Skills',
+                        data: [80, 70, 90, 85, 75],
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgb(75, 192, 192)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
